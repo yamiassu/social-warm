@@ -1,48 +1,128 @@
+<div align="center">
+
+<img src="assets/icon.svg" width="96" height="96" alt="Social Warm-Up logo" />
+
 # Social Warm-Up
 
-Chrome side-panel extension (Manifest V3, React + TanStack) that warms up an account on X, Reddit, LinkedIn, Instagram or YouTube: gather posts to like, reply to and follow, copy them as one prompt, then paste the AI's JSON reply back and apply it.
+**Warm up before you post.**
+A Chrome side panel that finds what to like, comment on and follow, lets an AI review it, and applies the plan with human-like pacing.
+
+![Manifest V3](https://img.shields.io/badge/Manifest-V3-7c5cff?style=flat-square)
+![React](https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react&logoColor=white)
+![TanStack](https://img.shields.io/badge/TanStack-Query%20%C2%B7%20Form%20%C2%B7%20Highlight%20%C2%B7%20AI-ff5c9d?style=flat-square)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?style=flat-square&logo=typescript&logoColor=white)
+![Local first](https://img.shields.io/badge/data-stays%20in%20your%20browser-3ddc97?style=flat-square)
+
+</div>
+
+---
+
+## Why
+
+Posting cold is slow. Warming up an account means scrolling, picking posts worth engaging with, writing replies that add something, and not repeating what others already said. Social Warm-Up does the finding and the checking, and keeps you in charge of what actually happens.
+
+## Supported sites
+
+| Site | Like | Comment | Follow | Follow check before suggesting |
+| --- | :---: | :---: | :---: | :---: |
+| **X** | ✅ | ✅ | ✅ | ✅ hover card |
+| **Reddit** | ✅ upvote | ✅ | ✅ | ➖ |
+| **LinkedIn** | ✅ react | ✅ | ✅ | ✅ post header |
+| **Instagram** | ✅ | ✅ | ✅ | ✅ post header |
+| **YouTube** | ✅ like | ✅ | ✅ subscribe | ➖ channel results only |
+
+> X is the most complete. The Reddit, LinkedIn, Instagram and YouTube selectors are best-effort and need real-world tuning: run a **Dry run** first and use **Copy error report** for anything that fails.
+
+## How it works
+
+```mermaid
+flowchart LR
+    A[Gather] -->|JSON prompt| B{Run it}
+    B -->|copy| C[Your own AI app]
+    B -->|Run with AI| D[OpenRouter · OpenAI · local model]
+    C --> E[Paste reply]
+    D --> E
+    E --> F[Validate]
+    F --> G[Dry run]
+    G --> H[Apply]
+```
+
+1. **Gather**: pick how many likes, comments and follows you want. The panel scrolls the page like a person (eased scrolling, random pauses, the odd scroll back) and collects candidates, skipping ads and things you already liked. It hover-checks authors so it only suggests accounts you don't already follow, and opens each reply target to read the existing replies so yours won't repeat them.
+2. **Prompt**: everything becomes one JSON document (instructions, posts, images, existing replies, response format) that you can copy or run in place.
+3. **Run with AI** *(optional)*: bring an OpenRouter or OpenAI key, or point at a local model (Ollama, LM Studio, vLLM). Turn on *Send post images* for vision models.
+4. **Apply**: paste or receive the model's reply, validate every action, try a **Dry run** (finds buttons, clicks nothing), then apply with 8–22 s human pauses between actions.
+
+## Install
+
+```bash
+git clone https://github.com/yamiassu/social-warm.git
+cd social-warm
+npm install
+npm run build
+```
+
+Then open `chrome://extensions`, enable **Developer mode**, choose **Load unpacked** and select the `dist/` folder. Click the extension icon to open the side panel.
+
+## Use it
+
+- **Counts**: `+` / `−` change a category by 1; **Ctrl/Alt-click** changes it by 5. Switch a category off to skip it.
+- **Base prompt**: your standing instructions, saved between sessions.
+- **Cog (top right)**: AI provider, key, model, and the image toggle.
+- **Apply tab**: works without a prior gather, so you can paste a reply after a reload.
+
+### The reply format
+
+The prompt asks the model for exactly this, and Apply validates it (unknown ids, wrong links, over-long or link-stuffed replies are ignored and shown to you):
+
+```json
+{
+  "version": 1,
+  "platform": "x",
+  "actions": [
+    { "id": "L1", "type": "like",   "do": true,  "url": "https://x.com/user/status/1" },
+    { "id": "R1", "type": "reply",  "do": true,  "url": "https://x.com/user/status/2", "text": "…" },
+    { "id": "F1", "type": "follow", "do": false, "handle": "someone", "reason": "off-topic" }
+  ]
+}
+```
 
 ## Develop
-```bash
-npm install
-npm run build      # type-check + build to dist/
-npm run dev        # watch panel + content script
-npm run icons      # regenerate icons + store images from assets/icon.svg
-npm run zip        # build and write social-warm.zip for the Web Store
-```
-Load `dist/` at `chrome://extensions` (Developer mode → Load unpacked).
 
-## Layout (vertical slices)
+```bash
+npm run dev     # watch the panel and the content script
+npm run build   # type-check + build to dist/
+npm run icons   # regenerate icons and store images from assets/icon.svg
+npm run zip     # build and package social-warm.zip for the Web Store
+```
+
+### Architecture: vertical slices
+
 ```
 src/
-  app/                 composition root: App shell, main, styles
-  features/
-    gather/            collect targets -> one prompt
-      GatherTab.tsx, gather.prompt.ts, gather.model.ts, useSavedGather.ts
-      page/            runs inside the X page: collect, harvest, followCheck
-    apply/             paste JSON -> validate -> dry run / apply
-      ApplyTab.tsx, apply.parse.ts, apply.run.ts, apply.model.ts
-      page/act.js      like / reply / follow on the page
-    ai/                BYO model: provider settings, run prompt (TanStack AI)
-    settings/          counts + base prompt, persisted
-  platforms/           one adapter per site (selectors + actions) + registry (URL rules)
-    x/ reddit/ linkedin/ instagram/ youtube/   adapter.js each
-    content.js         content-script entry: picks the adapter by hostname
-  shared/              chrome messaging, icons, human-like timing
-public/                manifest.json, background.js, icons
-assets/icon.svg        logo source of truth
-```
-Two builds share `dist/`: the panel (`vite.config.ts`) and the content script bundled as an IIFE (`vite.content.config.ts`). Features never import each other; they share only `shared/` and `settings/`.
-
-## Response format
-The copied prompt ends with a required format; Apply accepts:
-```json
-{ "version": 1, "actions": [
-  { "id": "L1", "type": "like", "do": true, "url": "https://x.com/u/status/1" },
-  { "id": "R1", "type": "reply", "do": true, "url": "https://x.com/u/status/2", "text": "…" },
-  { "id": "F1", "type": "follow", "do": false, "handle": "someone", "reason": "…" } ] }
+├─ app/                 composition root: shell, providers, styles
+├─ features/
+│  ├─ gather/           collect targets → one JSON prompt
+│  │  └─ page/          runs inside the site: collect, harvest, follow check
+│  ├─ apply/            paste → validate → dry run / apply
+│  ├─ ai/               provider settings + run the prompt (TanStack AI)
+│  └─ settings/         counts and base prompt, persisted
+├─ platforms/
+│  ├─ registry.ts       URL rules, handles, reply limits per site
+│  ├─ content.js        content-script entry, picks the adapter by hostname
+│  └─ x · reddit · linkedin · instagram · youtube / adapter.js
+└─ shared/              chrome messaging, human-like timing, DOM helpers, UI
 ```
 
-Page selectors for Reddit, LinkedIn, Instagram and YouTube are best-effort and need real-world tuning: run a Dry run first and use the error report. These platforms restrict automation in their terms.
+Features never import each other; the app shell wires them together. Adding a site means one new `adapter.js` plus a registry entry. Two builds share `dist/`: the panel (`vite.config.ts`) and the content script bundled as a single IIFE (`vite.content.config.ts`).
 
-Not affiliated with X Corp. Automation can violate platform rules; keep counts small and review every reply.
+## Privacy
+
+No server, no analytics, no accounts. Settings, your key and the last result live in `chrome.storage.local` (not encrypted). Data leaves your browser only when you press **Run with AI** or **Test connection**, and only to the provider you configured. See [PRIVACY.md](PRIVACY.md).
+
+## Responsible use
+
+Automating engagement can break a platform's rules, and LinkedIn and Instagram in particular restrict it and act quickly on accounts. Keep counts small, review every reply, and treat this as an assistant, not an autopilot. Not affiliated with or endorsed by X Corp., Reddit, LinkedIn, Instagram or YouTube.
+
+## Publishing
+
+Listing copy, permission justifications and a submission checklist are in [STORE.md](STORE.md).
