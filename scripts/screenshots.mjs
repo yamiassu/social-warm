@@ -129,7 +129,7 @@ for (const scheme of ['dark', 'light']) {
 // setup phase on a fresh install
 {
   const page = await open('dark', { fresh: true })
-  await clickText(page, '.chip', '3D & web dev')
+  for (const n of ['3D & web dev', 'Indie game dev', 'AI & ML']) await clickText(page, '.chip', n)
   await wait(150)
   await shot(page, 'setup-niche')
   await clickText(page, 'main .btns button', 'Next')

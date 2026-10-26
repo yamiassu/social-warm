@@ -126,3 +126,7 @@ details.fold > .code { margin-top: 10px; }
 .chip:hover { color: var(--text); } .chip.on { background: var(--brand); border-color: transparent; color: #fff; }
 .linkbtn { background: none; border: 0; color: var(--mut); font: 600 12px inherit; cursor: pointer; text-decoration: underline; justify-self: center; }
 main > .btns .primary { flex: 1; }
+
+.adder { display: flex; gap: 8px; }
+.adder input { flex: 1; min-width: 0; }
+.adder .primary { padding: 0 16px; }
