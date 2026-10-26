@@ -1,0 +1,26 @@
+{
+  "updated": "2026-10-26T21:00:10.300Z",
+  "run": "https://github.com/yamiassu/social-warm/actions/runs/40399504685",
+  "sites": {
+    "reddit": {
+      "status": "blocked",
+      "when": "2026-10-26T20:53:16.264Z"
+    },
+    "youtube": {
+      "status": "error",
+      "when": "2026-10-26T21:00:10.300Z"
+    },
+    "x": {
+      "status": "skipped",
+      "when": "2026-10-26T20:52:40Z"
+    },
+    "linkedin": {
+      "status": "skipped",
+      "when": "2026-10-26T20:52:40Z"
+    },
+    "instagram": {
+      "status": "skipped",
+      "when": "2026-10-26T20:52:41Z"
+    }
+  }
+}
