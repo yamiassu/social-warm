@@ -31,7 +31,7 @@ header p { margin: 0; color: var(--mut); font-size: 12px; }
 .tabs { flex: none; display: flex; gap: 4px; padding: 0 16px; border-bottom: 1px solid var(--line); }
 .tabs button { flex: 1; padding: 11px; background: none; border: 0; border-bottom: 2px solid transparent; color: var(--mut); font: 600 13px inherit; cursor: pointer; transition: color .15s; }
 .tabs button:hover { color: var(--text); }
-.tabs button.on { color: var(--text); border-image: var(--brand) 1; }
+.tabs button.on { color: var(--text); }
 
 main { flex: 1; min-height: 0; overflow-y: auto; align-content: start; padding: 16px; display: grid; gap: 14px; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: grid; gap: 12px; }
@@ -82,7 +82,7 @@ textarea:focus { outline: 2px solid var(--a); border-color: transparent; }
 .acts li.running { border-color: var(--a); } .acts li.bad, .acts li.skipped { opacity: .6; }
 
 [hidden] { display: none !important; }
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
 
 /* syntax-highlighted editor (shared/ui/CodeEditor) */
 :root { --mono: ui-monospace, "Cascadia Code", Consolas, monospace; }
@@ -133,3 +133,46 @@ main > .btns .primary { flex: 1; }
 
 /* setup actions stay reachable when the niche list scrolls */
 main > .btns { position: sticky; bottom: -16px; z-index: 2; margin: 0 -16px -16px; padding: 12px 16px 16px; background: linear-gradient(transparent, var(--bg) 30%); }
+
+/* ---- motion ---- */
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--a) 45%, transparent); } 50% { box-shadow: 0 0 0 5px transparent; } }
+@keyframes flow { to { background-position: -200% 0; } }
+@keyframes shake { 20%, 60% { transform: translateX(-3px); } 40%, 80% { transform: translateX(3px); } }
+@keyframes pop { 50% { transform: scale(1.06); } }
+
+/* whatever is mounted or revealed glides in, staggered */
+main:not([hidden]) > * { animation: rise .38s cubic-bezier(.2, .7, .2, 1) backwards; }
+main:not([hidden]) > :nth-child(2) { animation-delay: .04s; }
+main:not([hidden]) > :nth-child(3) { animation-delay: .08s; }
+main:not([hidden]) > :nth-child(4) { animation-delay: .12s; }
+main:not([hidden]) > :nth-child(n+5) { animation-delay: .16s; }
+
+/* tab underline slides between tabs */
+.tabs { position: relative; }
+.tabs::after { content: ""; position: absolute; left: 16px; bottom: -1px; height: 2px; width: calc((100% - 36px) / 2); background: var(--brand);
+  transform: translateX(calc(var(--tab, 0) * (100% + 4px))); transition: transform .3s cubic-bezier(.4, 0, .2, 1); }
+
+/* feedback on press / hover */
+.primary, .chip, .seg button, .step button, .iconbtn, .tabs button { transition: transform .15s, filter .15s, background .2s, color .2s, border-color .2s, box-shadow .2s, opacity .2s; }
+.primary:active:not(:disabled), .chip:active, .step button:active, .iconbtn:active { transform: scale(.96); }
+.chip.on { animation: pop .25s ease; }
+.pill { transition: background .25s, color .25s; }
+.logo { transition: transform .35s cubic-bezier(.3, 1.6, .5, 1); }
+.logo:hover { transform: rotate(-8deg) scale(1.06); }
+.iconbtn svg { transition: transform .35s cubic-bezier(.3, 1.4, .5, 1); }
+.iconbtn:hover svg { transform: rotate(40deg); }
+.iconbtn.on svg { transform: rotate(90deg); }
+.steps li i { transition: background .3s, color .3s; }
+
+/* progress + status */
+.prog > div { background: linear-gradient(90deg, var(--a), var(--b), var(--a)); background-size: 200% 100%; animation: flow 2.2s linear infinite; }
+.acts li { transition: border-color .25s, opacity .25s, background .25s; animation: rise .3s cubic-bezier(.2, .7, .2, 1) backwards; animation-delay: calc(var(--i, 0) * 45ms); }
+.acts li em { transition: color .25s; }
+.acts li.running { animation: pulse 1.3s ease-in-out infinite; }
+.hint { animation: fade .25s; }
+.hint.err { animation: shake .35s, fade .25s; }
+details.fold[open] > .code { animation: rise .28s cubic-bezier(.2, .7, .2, 1); }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { CodeEditor } from '../../shared/ui/CodeEditor'
 import { Icon } from '../../shared/ui/icons'
 import { navigate, sendToPage } from '../../shared/chrome/tabs'
@@ -68,8 +68,8 @@ export function ApplyTab({ tabId, supported, incoming }: { tabId?: number; suppo
         <section className="card">
           <h2>Actions <span>{todo.length} valid to apply</span></h2>
           <ul className="acts">
-            {entries.map((e) => (
-              <li key={e.id} className={e.error ? 'bad' : e.status}>
+            {entries.map((e, i) => (
+              <li key={e.id} className={e.error ? 'bad' : e.status} style={{ '--i': i } as CSSProperties}>
                 <b>{e.ref ? <Icon name={e.ref.type} /> : '?'}</b>
                 <span className="t">
                   {e.id} {e.ref?.label}

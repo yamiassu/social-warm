@@ -87,7 +87,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms))
 async function open(scheme, { fresh = false } = {}) {
   const page = await browser.newPage()
   await page.setViewport({ width: 400, height: 860, deviceScaleFactor: 2 })
-  await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: scheme }])
+  await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: scheme }, { name: 'prefers-reduced-motion', value: 'reduce' }])
   await page.evaluateOnNewDocument(stub, { result: fresh ? null : result, ai: fresh ? { ...ai, apiKey: '', vision: false } : ai, onboarded: !fresh })
   await page.goto(url, { waitUntil: 'networkidle0' })
   await page.waitForSelector('.app')

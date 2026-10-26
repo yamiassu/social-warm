@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { OnboardingFlow } from '../features/onboarding/OnboardingFlow'
 import { useOnboarded, useSetOnboarded } from '../features/onboarding/useOnboarded'
 import { AiRunButton } from '../features/ai/AiRunButton'
@@ -53,7 +53,7 @@ function Shell({ initial, initialAi, onboarded, saved, tabId, platform }: ShellP
       {!onboarded ? (
         <OnboardingFlow form={form} cfg={cfg} aiStep={<AiSettingsTab form={ai.form} cfg={ai.cfg} />} onDone={() => setOnboarded(true)} />
       ) : (<>
-      <nav className="tabs" hidden={settingsOpen}>
+      <nav className="tabs" hidden={settingsOpen} style={{ '--tab': view === 'gather' ? 0 : 1 } as CSSProperties}>
         {(Object.keys(TABS) as View[]).map((v) => (
           <button key={v} className={view === v ? 'on' : ''} onClick={() => setView(v)}>{TABS[v]}</button>
         ))}
