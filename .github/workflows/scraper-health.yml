@@ -55,7 +55,7 @@ jobs:
       - run: npm run build
         if: steps.gate.outputs.run == 'true'
 
-      - name: Install browser (retried: downloads occasionally hang)
+      - name: Install browser (retried, downloads sometimes hang)
         if: steps.gate.outputs.run == 'true'
         run: |
           for i in 1 2 3; do
