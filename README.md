@@ -36,6 +36,11 @@ Posting cold is slow. Warming up an account means scrolling, picking posts worth
     <td align="center"><img src="docs/screenshots/gather-light.png" width="230" alt="Light theme" /><br /><sub><b>Light theme</b> follows your OS</sub></td>
     <td></td>
   </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/setup-niche.png" width="230" alt="Setup: niche" /><br /><sub><b>Setup 1</b>: your niche and voice</sub></td>
+    <td align="center"><img src="docs/screenshots/setup-guide.png" width="230" alt="Setup: guide prompt" /><br /><sub><b>Setup 2</b>: your guide prompt</sub></td>
+    <td align="center"><img src="docs/screenshots/setup-ai.png" width="230" alt="Setup: AI" /><br /><sub><b>Setup 3</b>: optional AI</sub></td>
+  </tr>
 </table>
 </div>
 
@@ -83,6 +88,10 @@ npm run build
 
 Then open `chrome://extensions`, enable **Developer mode**, choose **Load unpacked** and select the `dist/` folder. Click the extension icon to open the side panel.
 
+## First run
+
+On a fresh install the panel opens a short **setup**: pick your **niche** and **voice**, review the **guide prompt** it drafts for you (edit freely), and optionally connect an **AI model**. Then you land in the normal Gather / Apply flow. Redo it any time from the cog → **Run setup again**. Installs that already have saved settings skip it.
+
 ## Use it
 
 - **Counts**: `+` / `−` change a category by 1; **Ctrl/Alt-click** changes it by 5. Switch a category off to skip it.
@@ -126,6 +135,7 @@ src/
 │  │  └─ page/          runs inside the site: collect, harvest, follow check
 │  ├─ apply/            paste → validate → dry run / apply
 │  ├─ ai/               provider settings + run the prompt (TanStack AI)
+│  ├─ onboarding/       first-run setup: niche, guide prompt, optional AI
 │  └─ settings/         counts and base prompt, persisted
 ├─ platforms/
 │  ├─ registry.ts       URL rules, handles, reply limits per site

@@ -56,8 +56,8 @@ const reply = JSON.stringify({
 const ai = { provider: 'openrouter', apiKey: 'sk-or-demo-key', model: 'anthropic/claude-sonnet-5.5', baseURL: 'http://localhost:11434/v1', vision: true }
 
 // minimal chrome.* stand-in so the panel runs outside the extension
-const stub = ({ result, ai }) => {
-  const store = { result, ai }
+const stub = ({ result, ai, onboarded }) => {
+  const store = { ai, onboarded, ...(result ? { result } : {}) }
   const noop = { addListener() {}, removeListener() {} }
   window.chrome = {
     tabs: { query: async () => [{ id: 1, url: 'https://x.com/home' }], onActivated: noop, onUpdated: noop, update() {}, sendMessage: async () => ({ ok: true }) },
@@ -84,11 +84,11 @@ const url = `http://localhost:${server.address().port}/`
 const browser = await puppeteer.launch({ executablePath: CHROME, headless: true })
 const wait = (ms) => new Promise((r) => setTimeout(r, ms))
 
-async function open(scheme) {
+async function open(scheme, { fresh = false } = {}) {
   const page = await browser.newPage()
   await page.setViewport({ width: 400, height: 860, deviceScaleFactor: 2 })
   await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: scheme }])
-  await page.evaluateOnNewDocument(stub, { result, ai })
+  await page.evaluateOnNewDocument(stub, { result: fresh ? null : result, ai: fresh ? { ...ai, apiKey: '', vision: false } : ai, onboarded: !fresh })
   await page.goto(url, { waitUntil: 'networkidle0' })
   await page.waitForSelector('.app')
   return page
@@ -123,6 +123,21 @@ for (const scheme of ['dark', 'light']) {
     await wait(200)
     await shot(page, 'settings')
   }
+  await page.close()
+}
+
+// setup phase on a fresh install
+{
+  const page = await open('dark', { fresh: true })
+  await clickText(page, '.chip', '3D & web dev')
+  await wait(150)
+  await shot(page, 'setup-niche')
+  await clickText(page, 'main .btns button', 'Next')
+  await wait(200)
+  await shot(page, 'setup-guide')
+  await clickText(page, 'main .btns button', 'Next')
+  await wait(200)
+  await shot(page, 'setup-ai')
   await page.close()
 }
 

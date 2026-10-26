@@ -114,3 +114,15 @@ header .pill { margin-left: auto; }
 details.fold > summary { cursor: pointer; color: var(--mut); font-size: 12px; font-weight: 600; list-style: none; user-select: none; }
 details.fold > summary::before { content: "▸ "; } details.fold[open] > summary::before { content: "▾ "; }
 details.fold > .code { margin-top: 10px; }
+
+/* setup phase */
+.steps { list-style: none; margin: 0; padding: 0; display: flex; gap: 8px; }
+.steps li { flex: 1; display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--mut); }
+.steps li i { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: var(--line); font-style: normal; font-size: 11px; }
+.steps li.on { color: var(--text); } .steps li.on i { background: var(--brand); color: #fff; }
+.steps li.done i { background: color-mix(in srgb, var(--ok) 25%, transparent); color: var(--ok); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { padding: 6px 10px; border-radius: 99px; border: 1px solid var(--line); background: var(--card2); color: var(--mut); font: 600 12px inherit; cursor: pointer; }
+.chip:hover { color: var(--text); } .chip.on { background: var(--brand); border-color: transparent; color: #fff; }
+.linkbtn { background: none; border: 0; color: var(--mut); font: 600 12px inherit; cursor: pointer; text-decoration: underline; justify-self: center; }
+main > .btns .primary { flex: 1; }

@@ -1,6 +1,6 @@
 export const KEYS = ['likes', 'comments', 'follows'] as const
 export type Key = (typeof KEYS)[number]
-export type Cfg = { base: string } & Record<Key, { on: boolean; n: number }>
+export type Cfg = { base: string; niche: string } & Record<Key, { on: boolean; n: number }>
 
 export const LABELS: Record<Key, string> = {
   likes: 'Likes / reactions',
@@ -9,6 +9,7 @@ export const LABELS: Record<Key, string> = {
 }
 
 export const DEFAULTS: Cfg = {
+  niche: '',
   base: `You are helping me warm up my social media account before I post.
 Act like a genuine, curious human in my niche: be specific, kind and brief.
 - Like the posts listed below.

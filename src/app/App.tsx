@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { OnboardingFlow } from '../features/onboarding/OnboardingFlow'
+import { useOnboarded, useSetOnboarded } from '../features/onboarding/useOnboarded'
 import { AiRunButton } from '../features/ai/AiRunButton'
 import { AiSettingsTab } from '../features/ai/AiSettingsTab'
 import { useAiSettings, useSavedAi } from '../features/ai/useAiSettings'
@@ -22,13 +24,15 @@ export function App() {
   const settings = useSavedSettings()
   const saved = useSavedGather()
   const ai = useSavedAi()
-  if (!settings.data || !saved.data || !ai.data) return null
-  return <Shell initial={settings.data} initialAi={ai.data} saved={saved.data} tabId={tab.data?.id} platform={platformOf(tab.data?.url)?.label} />
+  const onboarded = useOnboarded()
+  if (!settings.data || !saved.data || !ai.data || onboarded.data === undefined) return null
+  return <Shell initial={settings.data} initialAi={ai.data} onboarded={onboarded.data} saved={saved.data} tabId={tab.data?.id} platform={platformOf(tab.data?.url)?.label} />
 }
 
-type ShellProps = { initial: Cfg; initialAi: AiCfg; saved: Saved; tabId?: number; platform?: string }
+type ShellProps = { initial: Cfg; initialAi: AiCfg; onboarded: boolean; saved: Saved; tabId?: number; platform?: string }
 
-function Shell({ initial, initialAi, saved, tabId, platform }: ShellProps) {
+function Shell({ initial, initialAi, onboarded, saved, tabId, platform }: ShellProps) {
+  const setOnboarded = useSetOnboarded()
   const supported = !!platform
   const [view, setView] = useState<View>('gather')
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -42,10 +46,13 @@ function Shell({ initial, initialAi, saved, tabId, platform }: ShellProps) {
         <img className="logo" src={logo} alt="" />
         <div><h1>Social Warm-Up</h1><p>Warm up before you post.</p></div>
         <span className={'pill ' + (supported ? 'ok' : 'bad')}>{platform ? `${platform} detected` : 'Unsupported'}</span>
-        <button className={'iconbtn' + (settingsOpen ? ' on' : '')} aria-label={settingsOpen ? 'Close settings' : 'Open settings'} title={settingsOpen ? 'Close settings' : 'AI settings'} onClick={() => setSettingsOpen((o) => !o)}>
+        {onboarded && <button className={'iconbtn' + (settingsOpen ? ' on' : '')} aria-label={settingsOpen ? 'Close settings' : 'Open settings'} title={settingsOpen ? 'Close settings' : 'AI settings'} onClick={() => setSettingsOpen((o) => !o)}>
           <Icon name={settingsOpen ? 'close' : 'settings'} />
-        </button>
+        </button>}
       </header>
+      {!onboarded ? (
+        <OnboardingFlow form={form} cfg={cfg} aiStep={<AiSettingsTab form={ai.form} cfg={ai.cfg} />} onDone={() => setOnboarded(true)} />
+      ) : (<>
       <nav className="tabs" hidden={settingsOpen}>
         {(Object.keys(TABS) as View[]).map((v) => (
           <button key={v} className={view === v ? 'on' : ''} onClick={() => setView(v)}>{TABS[v]}</button>
@@ -69,7 +76,9 @@ function Shell({ initial, initialAi, saved, tabId, platform }: ShellProps) {
       </main>
       <main hidden={!settingsOpen}>
         <AiSettingsTab form={ai.form} cfg={ai.cfg} />
+        <button className="primary stop" onClick={() => { setSettingsOpen(false); setOnboarded(false) }}>Run setup again</button>
       </main>
+      </>)}
     </div>
   )
 }
