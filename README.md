@@ -122,6 +122,7 @@ npm run dev     # watch the panel and the content script
 npm run build   # type-check + build to dist/
 npm run icons   # regenerate icons and store images from assets/icon.svg
 npm run zip     # build and package social-warm.zip for the Web Store
+npm run probe -- reddit   # live scraper check for one site (see Scraper health)
 npm run screenshots   # re-render docs/screenshots (needs Chrome; set CHROME_PATH if needed)
 ```
 
@@ -145,6 +146,27 @@ src/
 ```
 
 Features never import each other; the app shell wires them together. Adding a site means one new `adapter.js` plus a registry entry. Two builds share `dist/`: the panel (`vite.config.ts`) and the content script bundled as a single IIFE (`vite.content.config.ts`).
+
+## Scraper health
+
+Sites change their markup without notice, so a [scheduled workflow](.github/workflows/scraper-health.yml) runs **every two days** (and on demand from the Actions tab). For each supported site it loads the real page, runs the actual built content script, and checks that gathering still finds well-formed posts; it also tries to read existing replies on one of them. A failing site opens (and later closes) an issue labelled `scraper-health`.
+
+| Site | Needs login | CI secret |
+| --- | :---: | --- |
+| Reddit | no | none |
+| YouTube | no | none |
+| X | yes | `X_STATE` |
+| LinkedIn | yes | `LINKEDIN_STATE` |
+| Instagram | yes | `INSTAGRAM_STATE` |
+
+Sites that need a login are **skipped** (not failed) until you add a session. To add one:
+
+```bash
+npm run auth -- x                       # opens Chrome: log in, press Enter in the terminal
+gh secret set X_STATE < .auth/x.json    # stores the session as a repo secret
+```
+
+Use a throwaway account: the session is a credential, and CI runs from datacenter IPs that LinkedIn and Instagram may challenge or block. Run any probe locally with `npm run build && PROBE_CHANNEL=chrome npm run probe -- reddit`.
 
 ## Privacy
 

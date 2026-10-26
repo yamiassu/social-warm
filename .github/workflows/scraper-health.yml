@@ -1,0 +1,70 @@
+name: Scraper health
+
+# Every two days: run the real content script against each supported site and check
+# that gathering still finds well-formed posts. Sites change their markup without notice.
+on:
+  schedule:
+    - cron: '0 6 */2 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  probe:
+    name: probe (${{ matrix.platform }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [x, reddit, linkedin, instagram, youtube]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+
+      - name: Probe ${{ matrix.platform }}
+        run: node scripts/probe.mjs ${{ matrix.platform }}
+        env:
+          X_STATE: ${{ secrets.X_STATE }}
+          LINKEDIN_STATE: ${{ secrets.LINKEDIN_STATE }}
+          INSTAGRAM_STATE: ${{ secrets.INSTAGRAM_STATE }}
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: probe-${{ matrix.platform }}
+          path: probe-results/
+          if-no-files-found: ignore
+
+      - name: Open or update the failure issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="Scraper probe failing: ${{ matrix.platform }}"
+          run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          body="Run: $run_url"$'\n\n'"$(cat probe-results/${{ matrix.platform }}.md 2>/dev/null)"
+          gh label create scraper-health --color d73a4a --description "Scraper selectors drifted" 2>/dev/null || true
+          n=$(gh issue list --state open --label scraper-health --search "\"$title\" in:title" --json number --jq '.[0].number')
+          if [ -n "$n" ]; then gh issue comment "$n" --body "$body"; else gh issue create --title "$title" --label scraper-health --body "$body"; fi
+
+      - name: Close the issue once it passes again
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [ "$(jq -r .status probe-results/${{ matrix.platform }}.json)" = "passed" ] || exit 0
+          title="Scraper probe failing: ${{ matrix.platform }}"
+          n=$(gh issue list --state open --label scraper-health --search "\"$title\" in:title" --json number --jq '.[0].number')
+          [ -z "$n" ] || gh issue close "$n" --comment "Probe passes again: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
