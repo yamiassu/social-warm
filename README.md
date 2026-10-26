@@ -147,6 +147,8 @@ src/
 
 Features never import each other; the app shell wires them together. Adding a site means one new `adapter.js` plus a registry entry. Two builds share `dist/`: the panel (`vite.config.ts`) and the content script bundled as a single IIFE (`vite.content.config.ts`).
 
+The panel runs on [TanStack Redact](https://tanstack.com/redact), a smaller React-compatible runtime, enabled by one Vite plugin (`redact()` in `vite.config.ts`). It trims about 180 kB from the panel bundle. Context, Suspense, memo and class components stay on because TanStack Query and Form rely on them; hydration, portals, Activity and fragment refs are off because the panel uses none of them. Redact is v0.x: if a dependency ever misbehaves, deleting the plugin line returns the panel to stock React (`react` / `react-dom` are still installed).
+
 ## Scraper health
 
 Sites change their markup without notice, so a [scheduled workflow](.github/workflows/scraper-health.yml) runs **every two days** (and on demand from the Actions tab). For each supported site it loads the real page, runs the actual built content script, and checks that gathering still finds well-formed posts; it also tries to read existing replies on one of them. A failing site opens (and later closes) an issue labelled `scraper-health`.
