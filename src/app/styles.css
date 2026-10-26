@@ -130,3 +130,6 @@ main > .btns .primary { flex: 1; }
 .adder { display: flex; gap: 8px; }
 .adder input { flex: 1; min-width: 0; }
 .adder .primary { padding: 0 16px; }
+
+/* setup actions stay reachable when the niche list scrolls */
+main > .btns { position: sticky; bottom: -16px; z-index: 2; margin: 0 -16px -16px; padding: 12px 16px 16px; background: linear-gradient(transparent, var(--bg) 30%); }

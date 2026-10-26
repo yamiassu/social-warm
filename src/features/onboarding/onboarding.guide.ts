@@ -1,4 +1,13 @@
-export const NICHES = ['3D & web dev', 'Indie game dev', 'SaaS & startups', 'Design & UX', 'AI & ML', 'Photography', 'Fitness', 'Writing']
+export const NICHES = [
+  // tech
+  '3D & web dev', 'Frontend', 'Backend', 'Mobile dev', 'DevOps & cloud', 'Open source', 'Cybersecurity', 'Data science', 'AI & ML', 'Indie game dev',
+  // product & business
+  'SaaS & startups', 'Product management', 'Marketing', 'Copywriting', 'Entrepreneurship', 'Personal finance', 'Crypto & web3',
+  // creative
+  'Design & UX', 'Motion design', 'Game art', 'Photography', 'Video & film', 'Music production', 'Writing', 'Podcasting',
+  // life
+  'Fitness', 'Productivity', 'Mental health', 'Education', 'Science', 'Books', 'Gaming', 'Travel', 'Food & cooking', 'Sports', 'Sustainability',
+]
 
 export const TONES = {
   friendly: 'warm, kind and curious',
