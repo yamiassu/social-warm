@@ -92,6 +92,20 @@ try {
   report.problems.push(String(e).slice(0, 300))
 }
 
-if (report.problems.length) await page.screenshot({ path: `${OUT}/${id}.png` }).catch(() => {})
+let blocked = false
+if (report.problems.length) {
+  await page.screenshot({ path: `${OUT}/${id}.png` }).catch(() => {})
+  const seen = await page.evaluate(() => ({ title: document.title, text: (document.body?.innerText || '').replace(/\s+/g, ' ').slice(0, 400) })).catch(() => null)
+  if (seen) {
+    report.notes.push(`page said: "${seen.title}" — ${seen.text}`)
+    // a wall instead of a feed means we can't judge the selectors from this IP (datacenter ranges get blocked)
+    blocked = /blocked|network security|verify you are|are you a human|captcha|unusual traffic|log in to continue|sign in to continue|security check/i.test(seen.title + ' ' + seen.text)
+  }
+}
 await browser.close()
+if (blocked) {
+  console.log(`::warning title=${id} blocked::the site served a wall instead of a feed, so the scraper could not be checked from this IP`)
+  report.notes.push('⚠️ blocked: could not verify from this IP (not counted as a failure)')
+  finish('blocked')
+}
 finish(report.problems.length ? 'failed' : 'passed', report.problems.length ? 1 : 0)
