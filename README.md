@@ -11,6 +11,7 @@ A Chrome side panel that finds what to like, comment on and follow, lets an AI r
 ![React](https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react&logoColor=white)
 ![TanStack](https://img.shields.io/badge/TanStack-Query%20%C2%B7%20Form%20%C2%B7%20Highlight%20%C2%B7%20AI-ff5c9d?style=flat-square)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?style=flat-square&logo=typescript&logoColor=white)
+![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
 ![Local first](https://img.shields.io/badge/data-stays%20in%20your%20browser-3ddc97?style=flat-square)
 
 </div>
@@ -20,6 +21,25 @@ A Chrome side panel that finds what to like, comment on and follow, lets an AI r
 ## Why
 
 Posting cold is slow. Warming up an account means scrolling, picking posts worth engaging with, writing replies that add something, and not repeating what others already said. Social Warm-Up does the finding and the checking, and keeps you in charge of what actually happens.
+
+## Screenshots
+
+<div align="center">
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/gather.png" width="230" alt="Gather tab" /><br /><sub><b>Gather</b>: pick what to collect</sub></td>
+    <td align="center"><img src="docs/screenshots/prompt.png" width="230" alt="Generated JSON prompt" /><br /><sub><b>Prompt</b>: one JSON document</sub></td>
+    <td align="center"><img src="docs/screenshots/apply.png" width="230" alt="Apply tab with validated actions" /><br /><sub><b>Apply</b>: validate, dry run, go</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/settings.png" width="230" alt="AI settings" /><br /><sub><b>AI settings</b>: OpenRouter, OpenAI or local</sub></td>
+    <td align="center"><img src="docs/screenshots/gather-light.png" width="230" alt="Light theme" /><br /><sub><b>Light theme</b> follows your OS</sub></td>
+    <td></td>
+  </tr>
+</table>
+</div>
+
+<sub>Demo data is fictional. Regenerate with <code>npm run build &amp;&amp; npm run screenshots</code>.</sub>
 
 ## Supported sites
 
@@ -93,6 +113,7 @@ npm run dev     # watch the panel and the content script
 npm run build   # type-check + build to dist/
 npm run icons   # regenerate icons and store images from assets/icon.svg
 npm run zip     # build and package social-warm.zip for the Web Store
+npm run screenshots   # re-render docs/screenshots (needs Chrome; set CHROME_PATH if needed)
 ```
 
 ### Architecture: vertical slices
@@ -122,6 +143,10 @@ No server, no analytics, no accounts. Settings, your key and the last result liv
 ## Responsible use
 
 Automating engagement can break a platform's rules, and LinkedIn and Instagram in particular restrict it and act quickly on accounts. Keep counts small, review every reply, and treat this as an assistant, not an autopilot. Not affiliated with or endorsed by X Corp., Reddit, LinkedIn, Instagram or YouTube.
+
+## License
+
+[MIT](LICENSE) © 2026 yamiassu. Contributions welcome: new site adapters especially (see the architecture above).
 
 ## Publishing
 

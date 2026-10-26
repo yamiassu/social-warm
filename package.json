@@ -7,7 +7,8 @@
     "build": "tsc --noEmit && npm run clean && vite build && vite build -c vite.content.config.ts",
     "icons": "node scripts/icons.mjs",
     "zip": "npm run build && node scripts/zip.mjs",
-    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "screenshots": "node scripts/screenshots.mjs"
   },
   "dependencies": {
     "@tanstack/ai": "^1.0.0",
@@ -25,10 +26,12 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "bestzip": "^4.0.3",
+    "puppeteer-core": "^25.16.0",
     "sharp": "^0.35.5",
     "typescript": "^7.0.2",
     "vite": "^8.3.5"
   },
   "version": "1.0.0",
-  "description": "Warm up your X account: gather targets, apply an AI-reviewed plan."
+  "description": "Warm up your X account: gather targets, apply an AI-reviewed plan.",
+  "license": "MIT"
 }
