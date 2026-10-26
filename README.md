@@ -153,6 +153,11 @@ The panel runs on [TanStack Redact](https://tanstack.com/redact), a smaller Reac
 
 Sites change their markup without notice, so a [scheduled workflow](.github/workflows/scraper-health.yml) runs **every two days** (and on demand from the Actions tab). For each supported site it loads the real page, runs the actual built content script, and checks that gathering still finds well-formed posts; it also tries to read existing replies on one of them. A failing site opens (and later closes) an issue labelled `scraper-health`.
 
+[![Scraper health](https://github.com/yamiassu/social-warm/actions/workflows/scraper-health.yml/badge.svg)](https://github.com/yamiassu/social-warm/actions/workflows/scraper-health.yml)
+[![X](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fyamiassu%2Fsocial-warm%2Fhealth%2Fx.json&label=X)](https://github.com/yamiassu/social-warm/actions/workflows/scraper-health.yml) [![Reddit](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fyamiassu%2Fsocial-warm%2Fhealth%2Freddit.json&label=Reddit)](https://github.com/yamiassu/social-warm/actions/workflows/scraper-health.yml) [![LinkedIn](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fyamiassu%2Fsocial-warm%2Fhealth%2Flinkedin.json&label=LinkedIn)](https://github.com/yamiassu/social-warm/actions/workflows/scraper-health.yml) [![Instagram](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fyamiassu%2Fsocial-warm%2Fhealth%2Finstagram.json&label=Instagram)](https://github.com/yamiassu/social-warm/actions/workflows/scraper-health.yml) [![YouTube](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fyamiassu%2Fsocial-warm%2Fhealth%2Fyoutube.json&label=YouTube)](https://github.com/yamiassu/social-warm/actions/workflows/scraper-health.yml)
+
+Each run publishes its results to the `health` branch (`status.json` plus one badge file per site). The badges above read it, and **so does the extension**: the cog shows a *Site status* card, and a warning appears on the Gather tab if the site you are on is currently failing. The extension fetches that public file from GitHub; nothing about you is sent.
+
 | Site | Needs login | CI secret |
 | --- | :---: | --- |
 | Reddit | no | none |
@@ -161,7 +166,7 @@ Sites change their markup without notice, so a [scheduled workflow](.github/work
 | LinkedIn | yes | `LINKEDIN_STATE` |
 | Instagram | yes | `INSTAGRAM_STATE` |
 
-Sites that need a login are **skipped** (not failed) until you add a session. To add one:
+Statuses: **passing**, **failing** (selectors drifted), **blocked in CI** (the site walls off GitHub's datacenter IPs, e.g. Reddit; verify locally with `npm run probe`) and **not monitored** (no login secret yet). Sites that need a login are **skipped** (not failed) until you add a session. To add one:
 
 ```bash
 npm run auth -- x                       # opens Chrome: log in, press Enter in the terminal

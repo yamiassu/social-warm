@@ -2,6 +2,7 @@ name: Scraper health
 
 # Every two days: run the real content script against each supported site and check
 # that gathering still finds well-formed posts. Sites change their markup without notice.
+# The results are published to the `health` branch, where the README badges and the extension read them.
 on:
   schedule:
     - cron: '0 6 */2 * *'
@@ -38,6 +39,8 @@ jobs:
           if [ -n "$v" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; else
             echo "run=false" >> "$GITHUB_OUTPUT"
             echo "::notice title=${{ matrix.platform }} skipped::needs a login session secret (see README → Scraper health)"
+            mkdir -p probe-results
+            echo "{\"platform\":\"${{ matrix.platform }}\",\"status\":\"skipped\",\"when\":\"$(date -u +%FT%TZ)\"}" > "probe-results/${{ matrix.platform }}.json"
           fi
 
       - uses: actions/checkout@v4
@@ -69,7 +72,7 @@ jobs:
         run: node scripts/probe.mjs ${{ matrix.platform }}
 
       - name: Upload report
-        if: always() && steps.gate.outputs.run == 'true'
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: probe-${{ matrix.platform }}
@@ -97,3 +100,41 @@ jobs:
           title="Scraper probe failing: ${{ matrix.platform }}"
           n=$(gh issue list --state open --label scraper-health --search "\"$title\" in:title" --json number --jq '.[0].number')
           [ -z "$n" ] || gh issue close "$n" --comment "Probe passes again: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+
+  # publishes status.json + one shields.io badge file per site to the `health` branch
+  publish:
+    name: publish status
+    needs: probe
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: probe-*
+          path: results
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - run: node scripts/health-publish.mjs
+
+      - name: Push to the health branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          remote="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git clone --depth 1 --branch health "$remote" ../health 2>/dev/null || {
+            mkdir ../health && git -C ../health init -q -b health && git -C ../health remote add origin "$remote"
+          }
+          find ../health -mindepth 1 -maxdepth 1 -not -name .git -exec rm -rf {} +
+          cp health-out/* ../health/
+          cd ../health
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || { git commit -q -m "health: $(date -u +%F)"; git push origin health; }

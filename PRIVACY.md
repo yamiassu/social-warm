@@ -12,6 +12,8 @@ Social Warm-Up does not collect, transmit, sell or share any personal data. It h
 
 **Optional AI feature.** If you add an API key (OpenRouter or OpenAI) or a local model URL in Settings, pressing "Run with AI" or "Test connection" sends the generated prompt (post text, handles and image links you gathered, plus your base prompt, and the images themselves if you turn on "Send post images") directly from your browser to that provider. Nothing goes through our servers; we have none. Your key is stored in local extension storage (not encrypted) and sent only to that provider. The extension asks for permission to reach the provider host the first time you use it.
 
+**Site status.** The panel fetches one public file (`status.json`) from this project's GitHub repository (`raw.githubusercontent.com`) to show whether the automated site checks are passing. The request carries no data from you; GitHub sees your IP address like for any web request.
+
 **Permissions.** `storage` (save your settings and last result), `sidePanel` (show the panel), `scripting` (re-inject the page script into tabs that were open before installation), and host access to the supported sites (`x.com`, `twitter.com`, `www.reddit.com`, `www.linkedin.com`, `www.instagram.com`, `www.youtube.com`) to read the page and perform the actions you approve, and `pbs.twimg.com` (X's image host, to read post pictures when you enable image sending to a local model), and optional host access requested only for the AI provider you configure.
 
 **Remote code.** None. All code ships inside the extension package.

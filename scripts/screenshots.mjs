@@ -53,12 +53,25 @@ const reply = JSON.stringify({
   ],
 }, null, 2)
 
+// demo statuses mirroring a typical state: public sites checked, login-only sites not monitored yet
+const day = 86_400_000
+const health = {
+  updated: new Date(Date.now() - day).toISOString(),
+  sites: {
+    youtube: { status: 'passed', when: new Date(Date.now() - day).toISOString() },
+    reddit: { status: 'blocked', when: new Date(Date.now() - day).toISOString() },
+    x: { status: 'skipped' }, linkedin: { status: 'skipped' }, instagram: { status: 'skipped' },
+  },
+}
+
 const ai = { provider: 'openrouter', apiKey: 'sk-or-demo-key', model: 'anthropic/claude-sonnet-5.5', baseURL: 'http://localhost:11434/v1', vision: true }
 
 // minimal chrome.* stand-in so the panel runs outside the extension
-const stub = ({ result, ai, onboarded }) => {
+const stub = ({ result, ai, onboarded, health }) => {
   const store = { ai, onboarded, ...(result ? { result } : {}) }
   const noop = { addListener() {}, removeListener() {} }
+  const realFetch = window.fetch
+  window.fetch = (u, ...a) => (String(u).includes('/health/status.json') ? Promise.resolve(new Response(JSON.stringify(health))) : realFetch(u, ...a))
   window.chrome = {
     tabs: { query: async () => [{ id: 1, url: 'https://x.com/home' }], onActivated: noop, onUpdated: noop, update() {}, sendMessage: async () => ({ ok: true }) },
     storage: { local: {
@@ -88,7 +101,7 @@ async function open(scheme, { fresh = false } = {}) {
   const page = await browser.newPage()
   await page.setViewport({ width: 400, height: 860, deviceScaleFactor: 2 })
   await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: scheme }, { name: 'prefers-reduced-motion', value: 'reduce' }])
-  await page.evaluateOnNewDocument(stub, { result: fresh ? null : result, ai: fresh ? { ...ai, apiKey: '', vision: false } : ai, onboarded: !fresh })
+  await page.evaluateOnNewDocument(stub, { result: fresh ? null : result, ai: fresh ? { ...ai, apiKey: '', vision: false } : ai, onboarded: !fresh, health })
   await page.goto(url, { waitUntil: 'networkidle0' })
   await page.waitForSelector('.app')
   return page

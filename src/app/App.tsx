@@ -12,7 +12,9 @@ import { useSavedSettings, useSettings } from '../features/settings/useSettings'
 import type { Cfg } from '../features/settings/settings.model'
 import type { Saved } from '../features/gather/gather.model'
 import { Icon } from '../shared/ui/icons'
-import { platformOf, SUPPORTED_LABELS } from '../platforms/registry'
+import { HealthBanner } from '../features/health/HealthBanner'
+import { HealthCard } from '../features/health/HealthCard'
+import { platformOf, type Platform } from '../platforms/registry'
 import { useActiveTab } from '../shared/chrome/tabs'
 import logo from '../../assets/icon.svg'
 
@@ -26,10 +28,10 @@ export function App() {
   const ai = useSavedAi()
   const onboarded = useOnboarded()
   if (!settings.data || !saved.data || !ai.data || onboarded.data === undefined) return null
-  return <Shell initial={settings.data} initialAi={ai.data} onboarded={onboarded.data} saved={saved.data} tabId={tab.data?.id} platform={platformOf(tab.data?.url)?.label} />
+  return <Shell initial={settings.data} initialAi={ai.data} onboarded={onboarded.data} saved={saved.data} tabId={tab.data?.id} platform={platformOf(tab.data?.url)} />
 }
 
-type ShellProps = { initial: Cfg; initialAi: AiCfg; onboarded: boolean; saved: Saved; tabId?: number; platform?: string }
+type ShellProps = { initial: Cfg; initialAi: AiCfg; onboarded: boolean; saved: Saved; tabId?: number; platform?: Platform }
 
 function Shell({ initial, initialAi, onboarded, saved, tabId, platform }: ShellProps) {
   const setOnboarded = useSetOnboarded()
@@ -45,7 +47,7 @@ function Shell({ initial, initialAi, onboarded, saved, tabId, platform }: ShellP
       <header>
         <img className="logo" src={logo} alt="" />
         <div><h1>Social Warm-Up</h1><p>Warm up before you post.</p></div>
-        <span className={'pill ' + (supported ? 'ok' : 'bad')}>{platform ? `${platform} detected` : 'Unsupported'}</span>
+        <span className={'pill ' + (supported ? 'ok' : 'bad')}>{platform ? `${platform.label} detected` : 'Unsupported'}</span>
         {onboarded && <button className={'iconbtn' + (settingsOpen ? ' on' : '')} aria-label={settingsOpen ? 'Close settings' : 'Open settings'} title={settingsOpen ? 'Close settings' : 'AI settings'} onClick={() => setSettingsOpen((o) => !o)}>
           <Icon name={settingsOpen ? 'close' : 'settings'} />
         </button>}
@@ -58,6 +60,7 @@ function Shell({ initial, initialAi, onboarded, saved, tabId, platform }: ShellP
           <button key={v} className={view === v ? 'on' : ''} onClick={() => setView(v)}>{TABS[v]}</button>
         ))}
       </nav>
+      {!settingsOpen && <HealthBanner platform={platform?.id} />}
       {/* all tabs stay mounted so in-progress state survives tab switches */}
       <main hidden={settingsOpen || view !== 'gather'}>
         <GatherTab
@@ -76,6 +79,7 @@ function Shell({ initial, initialAi, onboarded, saved, tabId, platform }: ShellP
       </main>
       <main hidden={!settingsOpen}>
         <AiSettingsTab form={ai.form} cfg={ai.cfg} />
+        <HealthCard />
         <button className="primary stop" onClick={() => { setSettingsOpen(false); setOnboarded(false) }}>Run setup again</button>
       </main>
       </>)}
