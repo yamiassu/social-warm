@@ -58,18 +58,12 @@ jobs:
       - run: npm run build
         if: steps.gate.outputs.run == 'true'
 
-      - name: Install browser (retried, downloads sometimes hang)
-        if: steps.gate.outputs.run == 'true'
-        run: |
-          for i in 1 2 3; do
-            timeout 240 npx playwright install --with-deps chromium && exit 0
-            echo "install attempt $i failed or timed out"
-          done
-          exit 1
-
       - name: Probe ${{ matrix.platform }}
+        id: probe
         if: steps.gate.outputs.run == 'true'
         run: node scripts/probe.mjs ${{ matrix.platform }}
+        env:
+          PROBE_CHANNEL: chrome # Chrome comes preinstalled on the runner
 
       - name: Upload report
         if: always()
@@ -80,7 +74,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Open or update the failure issue
-        if: failure() && steps.gate.outputs.run == 'true'
+        if: steps.probe.conclusion == 'failure'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
