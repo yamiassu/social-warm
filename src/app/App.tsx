@@ -9,7 +9,8 @@ import { ApplyTab } from '../features/apply/ApplyTab'
 import { GatherTab } from '../features/gather/GatherTab'
 import { useSavedGather } from '../features/gather/useSavedGather'
 import { useSavedSettings, useSettings } from '../features/settings/useSettings'
-import type { Cfg } from '../features/settings/settings.model'
+import { SafetyCards } from '../features/settings/SafetyCards'
+import { phrases, type Cfg } from '../features/settings/settings.model'
 import type { Saved } from '../features/gather/gather.model'
 import { Icon } from '../shared/ui/icons'
 import { HealthBanner } from '../features/health/HealthBanner'
@@ -75,10 +76,11 @@ function Shell({ initial, initialAi, onboarded, saved, tabId, platform }: ShellP
         />
       </main>
       <main hidden={settingsOpen || view !== 'apply'}>
-        <ApplyTab tabId={tabId} supported={supported} incoming={incoming} />
+        <ApplyTab tabId={tabId} supported={supported} incoming={incoming} caps={cfg.caps} banned={phrases(cfg.banned)} />
       </main>
       <main hidden={!settingsOpen}>
         <AiSettingsTab form={ai.form} cfg={ai.cfg} />
+        <SafetyCards form={form} />
         <HealthCard />
         <button className="primary stop" onClick={() => { setSettingsOpen(false); setOnboarded(false) }}>Run setup again</button>
       </main>

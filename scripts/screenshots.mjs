@@ -77,7 +77,7 @@ const stub = ({ result, ai, onboarded, health }) => {
     storage: { local: {
       get: async (k) => (Array.isArray(k) ? Object.fromEntries(k.filter((x) => x in store).map((x) => [x, store[x]])) : k in store ? { [k]: store[k] } : {}),
       set: async (o) => { Object.assign(store, o) },
-    } },
+    }, onChanged: noop },
     runtime: { onMessage: noop, sendMessage() {}, getManifest: () => ({ version: '1.0.0' }) },
     scripting: { executeScript: async () => {} },
     permissions: { contains: async () => true, request: async () => true },

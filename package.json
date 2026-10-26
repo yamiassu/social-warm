@@ -10,7 +10,8 @@
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "screenshots": "node scripts/screenshots.mjs",
     "probe": "node scripts/probe.mjs",
-    "auth": "node scripts/auth.mjs"
+    "auth": "node scripts/auth.mjs",
+    "test": "vitest run"
   },
   "dependencies": {
     "@tanstack/ai": "^1.0.0",
@@ -33,7 +34,8 @@
     "puppeteer-core": "^25.16.0",
     "sharp": "^0.35.5",
     "typescript": "^7.0.2",
-    "vite": "^8.3.5"
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
   },
   "version": "1.0.0",
   "description": "Warm up your X account: gather targets, apply an AI-reviewed plan.",

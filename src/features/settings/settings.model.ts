@@ -1,6 +1,11 @@
 export const KEYS = ['likes', 'comments', 'follows'] as const
 export type Key = (typeof KEYS)[number]
-export type Cfg = { base: string; niche: string } & Record<Key, { on: boolean; n: number }>
+import type { Kind } from '../../shared/history'
+
+export type Cfg = { base: string; niche: string; banned: string; caps: Record<Kind, number> } & Record<Key, { on: boolean; n: number }>
+
+// phrases the replies must avoid, one per line or comma separated
+export const phrases = (s: string) => s.split(/[\n,]/).map((x) => x.trim()).filter(Boolean)
 
 export const LABELS: Record<Key, string> = {
   likes: 'Likes / reactions',
@@ -10,6 +15,8 @@ export const LABELS: Record<Key, string> = {
 
 export const DEFAULTS: Cfg = {
   niche: '',
+  banned: 'great post, game changer, delve, unlock, in today\'s world',
+  caps: { like: 100, reply: 20, follow: 30 }, // per rolling 24h, deliberately conservative
   base: `You are helping me warm up my social media account before I post.
 Act like a genuine, curious human in my niche: be specific, kind and brief.
 - Like the posts listed below.

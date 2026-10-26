@@ -3,7 +3,7 @@ import type { Result } from './gather.model'
 
 // The prompt is itself a JSON document: sections can be added, removed or enriched
 // (by us or by our own AI step) without touching a text template.
-const responseFormat = (platform: string, replyMax: number) => ({
+const responseFormat = (platform: string, replyMax: number, banned: string[]) => ({
   instructions: 'Reply with ONE fenced ```json block and nothing else, shaped exactly like `example`.',
   example: {
     version: 1,
@@ -19,12 +19,13 @@ const responseFormat = (platform: string, replyMax: number) => ({
     'Copy "url" (like, reply) or "handle" (follow) exactly from this document; the response must stand on its own.',
     'Include every listed id exactly once. Set "do": false with a short "reason" to skip an item (off-topic, spam, controversial, low quality).',
     '"text" is required only for replies with "do": true: plain text, no hashtags, no links. It must not repeat or closely paraphrase any entry in that post\'s "existing_replies", nor another reply of yours.',
+    ...(banned.length ? [`Replies must never contain these words or phrases (case-insensitive): ${banned.join(', ')}. Entries that do are ignored.`] : []),
     'Items with "images" include picture URLs; if you can see images, use them to judge the post, otherwise rely on the text.',
     'Entries that break these rules will be ignored when applied.',
   ],
 })
 
-export function buildPromptDoc(base: string, { platform, page, data }: Result) {
+export function buildPromptDoc(base: string, { platform, page, data }: Result, banned: string[] = []) {
   const p = platformById(platform)
   const images = (x: { images?: string[] }) => (x.images?.length ? { images: x.images } : {})
   return {
@@ -41,8 +42,8 @@ export function buildPromptDoc(base: string, { platform, page, data }: Result) {
       existing_replies: (x.thread ?? []).map((r) => ({ author: r.handle, text: r.text })),
     })),
     follows: data.follows.map((x, i) => ({ id: `F${i + 1}`, handle: x.handle, url: p.profile(x.handle), ...(x.bio ? { bio: x.bio } : {}) })),
-    response_format: responseFormat(p.id, p.replyMax),
+    response_format: responseFormat(p.id, p.replyMax, banned),
   }
 }
 
-export const buildPrompt = (base: string, result: Result) => JSON.stringify(buildPromptDoc(base, result), null, 2)
+export const buildPrompt = (base: string, result: Result, banned: string[] = []) => JSON.stringify(buildPromptDoc(base, result, banned), null, 2)

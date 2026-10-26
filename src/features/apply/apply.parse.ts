@@ -17,7 +17,16 @@ function toRef(a: any, platformId: PlatformId): Ref | string {
   return 'unknown type'
 }
 
-export function parseResponse(raw: string): { entries: Entry[]; error?: string } {
+// reply text rules; also re-run when the user edits a reply before applying
+export function replyProblem(text: unknown, max: number, banned: string[] = []): string | undefined {
+  if (!(typeof text === 'string' && text.trim() && text.length <= max && !/https?:\/\/|#\w/.test(text)))
+    return `reply text missing, over ${max} chars, or has link/hashtag`
+  const hit = banned.find((b) => text.toLowerCase().includes(b.toLowerCase()))
+  return hit ? `reply contains banned phrase "${hit}"` : undefined
+}
+export const isTextError = (e?: string) => !!e?.startsWith('reply ')
+
+export function parseResponse(raw: string, banned: string[] = []): { entries: Entry[]; error?: string } {
   const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/)
   const body = fenced ? fenced[1] : raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1)
   let j: any
@@ -34,8 +43,7 @@ export function parseResponse(raw: string): { entries: Entry[]; error?: string }
     if (!ref) e.error = r as string
     else if (seen.has(id)) e.error = 'duplicate id'
     else if (typeof a.do !== 'boolean') e.error = '"do" must be true/false'
-    else if (ref.type === 'reply' && a.do && !(typeof a.text === 'string' && a.text.trim() && a.text.length <= max && !/https?:\/\/|#\w/.test(a.text)))
-      e.error = `reply text missing, over ${max} chars, or has link/hashtag`
+    else if (ref.type === 'reply' && a.do) e.error = replyProblem(a.text, max, banned)
     seen.add(id)
     if (!e.error && !a.do) e.status = 'skipped'
     return e

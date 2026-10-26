@@ -97,7 +97,8 @@ On a fresh install the panel opens a short **setup**: pick your **niches** (as m
 - **Counts**: `+` / `−` change a category by 1; **Ctrl/Alt-click** changes it by 5. Switch a category off to skip it.
 - **Base prompt**: your standing instructions, saved between sessions.
 - **Cog (top right)**: AI provider, key, model, and the image toggle.
-- **Apply tab**: works without a prior gather, so you can paste a reply after a reload.
+- **Apply tab**: works without a prior gather, so you can paste a reply after a reload. Replies are editable and any action can be skipped before you apply.
+- **Safety** (in the cog): daily limits per action (rolling 24h, default 100 likes / 20 replies / 30 follows), a list of words replies must avoid, and settings export/import. Applying also remembers what it did, so the same post is never liked or replied to twice, and it stops on its own if the site shows a captcha or rate-limit wall. Pauses are 8–22s with the odd longer break.
 
 ### The reply format
 
@@ -119,6 +120,7 @@ The prompt asks the model for exactly this, and Apply validates it (unknown ids,
 
 ```bash
 npm run dev     # watch the panel and the content script
+npm test        # unit tests (reply validation, history, prompt)
 npm run build   # type-check + build to dist/
 npm run icons   # regenerate icons and store images from assets/icon.svg
 npm run zip     # build and package social-warm.zip for the Web Store
