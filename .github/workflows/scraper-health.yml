@@ -15,32 +15,61 @@ jobs:
   probe:
     name: probe (${{ matrix.platform }})
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
         platform: [x, reddit, linkedin, instagram, youtube]
+    env:
+      X_STATE: ${{ secrets.X_STATE }}
+      LINKEDIN_STATE: ${{ secrets.LINKEDIN_STATE }}
+      INSTAGRAM_STATE: ${{ secrets.INSTAGRAM_STATE }}
     steps:
+      # login-only sites without a session secret are skipped before paying for a browser
+      - name: Check this site can run
+        id: gate
+        run: |
+          case "${{ matrix.platform }}" in
+            x) v="$X_STATE" ;;
+            linkedin) v="$LINKEDIN_STATE" ;;
+            instagram) v="$INSTAGRAM_STATE" ;;
+            *) v=public ;;
+          esac
+          if [ -n "$v" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=${{ matrix.platform }} skipped::needs a login session secret (see README → Scraper health)"
+          fi
+
       - uses: actions/checkout@v4
+        if: steps.gate.outputs.run == 'true'
 
       - uses: actions/setup-node@v4
+        if: steps.gate.outputs.run == 'true'
         with:
           node-version: 24
           cache: npm
 
       - run: npm ci
+        if: steps.gate.outputs.run == 'true'
+
       - run: npm run build
-      - run: npx playwright install --with-deps chromium
+        if: steps.gate.outputs.run == 'true'
+
+      - name: Install browser (retried: downloads occasionally hang)
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          for i in 1 2 3; do
+            timeout 240 npx playwright install --with-deps chromium && exit 0
+            echo "install attempt $i failed or timed out"
+          done
+          exit 1
 
       - name: Probe ${{ matrix.platform }}
+        if: steps.gate.outputs.run == 'true'
         run: node scripts/probe.mjs ${{ matrix.platform }}
-        env:
-          X_STATE: ${{ secrets.X_STATE }}
-          LINKEDIN_STATE: ${{ secrets.LINKEDIN_STATE }}
-          INSTAGRAM_STATE: ${{ secrets.INSTAGRAM_STATE }}
 
       - name: Upload report
-        if: always()
+        if: always() && steps.gate.outputs.run == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: probe-${{ matrix.platform }}
@@ -48,7 +77,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Open or update the failure issue
-        if: failure()
+        if: failure() && steps.gate.outputs.run == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -60,11 +89,11 @@ jobs:
           if [ -n "$n" ]; then gh issue comment "$n" --body "$body"; else gh issue create --title "$title" --label scraper-health --body "$body"; fi
 
       - name: Close the issue once it passes again
-        if: success()
+        if: success() && steps.gate.outputs.run == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          [ "$(jq -r .status probe-results/${{ matrix.platform }}.json)" = "passed" ] || exit 0 # skipped/blocked leave an open issue alone
+          [ "$(jq -r .status probe-results/${{ matrix.platform }}.json)" = "passed" ] || exit 0 # blocked leaves an open issue alone
           title="Scraper probe failing: ${{ matrix.platform }}"
           n=$(gh issue list --state open --label scraper-health --search "\"$title\" in:title" --json number --jq '.[0].number')
           [ -z "$n" ] || gh issue close "$n" --comment "Probe passes again: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
