@@ -30,6 +30,9 @@ Pace actions randomly with human-like pauses, and stop if anything looks off (ra
 
 export const clamp = (v: number) => Math.max(0, Math.min(50, Math.round(v) || 0))
 
+// gather this many times the requested amount: the model drops off-niche items, then the request is the cap
+export const OVERSAMPLE = 10
+
 // disabled categories count as zero
 export const targetsOf = (cfg: Cfg) =>
   Object.fromEntries(KEYS.map((k) => [k, cfg[k].on ? cfg[k].n : 0])) as Record<Key, number>

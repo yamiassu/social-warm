@@ -4,13 +4,14 @@ import { Icon } from '../../shared/ui/icons'
 import { navigate, sendToPage } from '../../shared/chrome/tabs'
 import { already, loadHistory, record, usedToday, useHistory, type Kind } from '../../shared/history'
 import { platformById } from '../../platforms/registry'
+import type { Key } from '../settings/settings.model'
 import type { Entry } from './apply.model'
 import { isTextError, parseResponse, replyProblem } from './apply.parse'
 import { buildErrorReport, gapMs, pause } from './apply.run'
 
-type Props = { tabId?: number; supported: boolean; incoming?: { text: string; n: number }; caps: Record<Kind, number>; banned: string[] }
+type Props = { tabId?: number; supported: boolean; incoming?: { text: string; n: number }; caps: Record<Kind, number>; banned: string[]; limits: Record<Key, number> }
 
-export function ApplyTab({ tabId, supported, incoming, caps, banned }: Props) {
+export function ApplyTab({ tabId, supported, incoming, caps, banned, limits }: Props) {
   const [raw, setRaw] = useState('')
   const [entries, setEntries] = useState<Entry[]>([])
   const [error, setError] = useState('')
@@ -26,7 +27,7 @@ export function ApplyTab({ tabId, supported, incoming, caps, banned }: Props) {
   const problems = entries.filter((e) => e.error || e.status === 'failed')
 
   const load = (text: string) => {
-    const r = parseResponse(text, banned)
+    const r = parseResponse(text, banned, limits)
     setEntries(r.entries); setError(r.error ?? ''); setStopped('')
   }
 

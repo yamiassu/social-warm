@@ -16,6 +16,12 @@ describe('parseResponse', () => {
     expect(entries[2].ref?.url).toContain('someone')
   })
 
+  it('keeps only the requested amount of approved actions per type', () => {
+    const { entries } = parseResponse(doc([1, 2, 3].map((n) => ({ id: `L${n}`, type: 'like', do: true, url: `https://x.com/a/status/${n}` }))), [], { likes: 2, comments: 0, follows: 0 })
+    expect(entries.map((e) => e.do)).toEqual([true, true, false])
+    expect(entries[2].status).toBe('skipped')
+  })
+
   it('rejects bad json, wrong version and unknown types', () => {
     expect(parseResponse('nope').error).toMatch(/No valid JSON/)
     expect(parseResponse('{"version":2,"actions":[]}').error).toMatch(/Expected/)

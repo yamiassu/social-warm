@@ -1,4 +1,5 @@
 import { platformById, platformByPostUrl, type PlatformId } from '../../platforms/registry'
+import type { Key } from '../settings/settings.model'
 import type { Entry, Ref } from './apply.model'
 
 // the response is self-contained (url / handle per action), so no prior gather is needed
@@ -26,7 +27,10 @@ export function replyProblem(text: unknown, max: number, banned: string[] = []):
 }
 export const isTextError = (e?: string) => !!e?.startsWith('reply ')
 
-export function parseResponse(raw: string, banned: string[] = []): { entries: Entry[]; error?: string } {
+const KEY_OF = { like: 'likes', reply: 'comments', follow: 'follows' } as const
+
+// gathering oversamples, so the model may approve more than was asked for: keep the first `limits` valid ones per type
+export function parseResponse(raw: string, banned: string[] = [], limits?: Record<Key, number>): { entries: Entry[]; error?: string } {
   const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/)
   const body = fenced ? fenced[1] : raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1)
   let j: any
@@ -48,5 +52,12 @@ export function parseResponse(raw: string, banned: string[] = []): { entries: En
     if (!e.error && !a.do) e.status = 'skipped'
     return e
   })
+  if (limits) {
+    const left = { ...limits }
+    for (const e of entries) {
+      if (e.error || !e.do || !e.ref) continue
+      if (left[KEY_OF[e.ref.type as keyof typeof KEY_OF]]-- <= 0) { e.do = false; e.status = 'skipped'; e.reason = 'over the requested amount' }
+    }
+  }
   return { entries }
 }
