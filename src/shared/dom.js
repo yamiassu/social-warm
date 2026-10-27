@@ -18,10 +18,15 @@ export function num(s = '') {
   return Math.round(parseFloat(m[1]) * ({ K: 1e3, M: 1e6, B: 1e9 }[(m[2] || '').toUpperCase()] || 1));
 }
 
-// put text into a focused editable in one go: char-by-char insertText makes editors like X's Draft.js
-// reset the caret and repeat the first letters. Try a paste event, then a single insertText if the field is still empty.
-export async function typeInto(el, text) {
+// type into a focused editable like a person (works for textarea and contenteditable).
+// bulk: put the text in at once instead (paste, then one insertText if the field is still empty): X's Draft.js
+// resets the caret on every typed character and repeats the first letters.
+export async function typeInto(el, text, bulk = false) {
   el.focus();
+  if (!bulk) {
+    for (const ch of text) { document.execCommand('insertText', false, ch); await sleep(rnd(40, 130)); }
+    return;
+  }
   const dt = new DataTransfer();
   dt.setData('text/plain', text);
   el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));

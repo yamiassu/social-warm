@@ -70,16 +70,20 @@ async function act({ type, text, dry }) {
   const host = await waitFor(() => document.querySelector('comment-composer-host'));
   if (!host) return fail('comment composer not found');
   if (dry) return ok('dry run: comment composer found');
-  let editor = deep('[contenteditable="true"]', host);
-  if (!editor) { // collapsed composer: open it first
-    const opener = deep('faceplate-textarea-input, button', host);
-    if (opener) await click(opener);
-    editor = await waitFor(() => deep('[contenteditable="true"]', host), 5000);
+  // the real editor sits in the DOM hidden (0x0) until the collapsed box ("Join the conversation") is clicked
+  const shown = (e) => e && (e.offsetWidth || e.offsetHeight);
+  const live = () => deepAll('[contenteditable="true"]').find(shown);
+  let editor = live();
+  if (!editor) {
+    const opener = [...deepAll('textarea', host), ...deepAll('textarea')].find((t) => shown(t) && /conversa|conversation|comment/i.test(t.getAttribute('aria-label') || t.placeholder || ''))
+      || deepAll('textarea, faceplate-textarea-input, button', host).find(shown);
+    if (opener) { opener.focus(); await click(opener); } // the box expands on focus; a bare click() doesn't focus it
+    editor = await waitFor(live, 5000);
   }
   if (!editor) return fail('comment editor did not open');
   await typeInto(editor, text);
   await sleep(rnd(800, 1800));
-  const ready = () => { const b = buttonByText(/^comment$/i, host); return b && !b.disabled && b.getAttribute('aria-disabled') !== 'true' ? b : null; };
+  const ready = () => { const b = buttonByText(/^(comment|comentar)$/i, host) || buttonByText(/^(comment|comentar)$/i); return b && !b.disabled && b.getAttribute('aria-disabled') !== 'true' ? b : null; };
   let send = await waitFor(ready, 3000);
   if (!send) { // the editor may not have registered the text: nudge it with a real edit, then look again
     editor.focus();
@@ -88,8 +92,9 @@ async function act({ type, text, dry }) {
     send = await waitFor(ready, 3000);
   }
   if (!send) {
-    const b = buttonByText(/^comment$/i, host);
-    return fail(`comment button ${b ? 'disabled' : 'not found'} (editor has ${(editor.innerText || '').trim().length} of ${text.length} chars)`);
+    const b = buttonByText(/^(comment|comentar)$/i, host);
+    const now = deepAll('[contenteditable="true"]').find(shown); // the editor node can be replaced while typing
+    return fail(`comment button ${b ? 'disabled' : 'not found'} (editor has ${(now?.innerText || '').trim().length} of ${text.length} chars)`);
   }
   await click(send);
   return (await waitFor(() => !(deep('[contenteditable="true"]', host)?.innerText || '').trim(), 6000)) ? ok() : fail('comment not confirmed');

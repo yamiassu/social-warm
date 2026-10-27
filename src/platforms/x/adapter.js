@@ -86,7 +86,7 @@ async function act({ type, text, dry }) {
   await click(rb);
   const box = await waitFor(() => document.querySelector('[role="dialog"] [data-testid="tweetTextarea_0"]'));
   if (!box) return fail('composer did not open');
-  await typeInto(box, text);
+  await typeInto(box, text, true);
   await sleep(rnd(800, 1800));
   const send = await waitFor(() => { const b = document.querySelector('[role="dialog"] [data-testid="tweetButton"]'); return b && b.getAttribute('aria-disabled') !== 'true' ? b : null; }, 4000);
   if (!send) return fail('reply button disabled');
