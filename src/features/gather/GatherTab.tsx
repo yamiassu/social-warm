@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { CodeEditor } from '../../shared/ui/CodeEditor'
-import { SUPPORTED_LABELS } from '../../platforms/registry'
+import { SUPPORTED_LABELS, platformOf } from '../../platforms/registry'
 import { navigate, sendToPage } from '../../shared/chrome/tabs'
 import { SettingsCards } from '../settings/SettingsCards'
-import { KEYS, OVERSAMPLE, phrases, targetsOf, type Cfg } from '../settings/settings.model'
+import { KEYS, langsOf, phrases, queryOf, targetsOf, type Cfg } from '../settings/settings.model'
 import type { SettingsForm } from '../settings/useSettings'
 import { buildPrompt } from './gather.prompt'
 import type { Progress, Result, Saved } from './gather.model'
@@ -27,11 +27,13 @@ export function GatherTab({ form, cfg, saved, tabId, supported, resultActions }:
   useEffect(() => { if (result) void chrome.storage.local.set({ prompt: { text: prompt, at: result.at } }) }, [prompt, result])
 
   const wanted = targetsOf(cfg)
-  const targets = Object.fromEntries(KEYS.map((k) => [k, wanted[k] * OVERSAMPLE])) as typeof wanted
+  const targets = Object.fromEntries(KEYS.map((k) => [k, wanted[k] * cfg.oversample])) as typeof wanted
   const total = Object.values(targets).reduce((a, b) => a + b, 0)
 
   useEffect(() => {
-    const onMsg = (m: any) => {
+    // every open panel hears every tab's messages: only react to the tab this panel is bound to
+    const onMsg = (m: any, sender: chrome.runtime.MessageSender) => {
+      if (sender.tab?.id !== tabId) return
       if (m.type === 'progress') setProgress(m)
       if (m.type === 'done') void finish(m)
     }
@@ -63,7 +65,17 @@ export function GatherTab({ form, cfg, saved, tabId, supported, resultActions }:
   }, [form, tabId])
 
   const start = useMutation({
-    mutationFn: () => sendToPage(tabId!, { type: 'collect', targets }),
+    mutationFn: async () => {
+      const q = queryOf(cfg.niche)
+      if (cfg.search.on && q) {
+        const search = platformOf((await chrome.tabs.get(tabId!)).url)?.search
+        if (search) { // no keyword search on this site (LinkedIn, Instagram): read the feed instead
+          setNote('Searching the niche…')
+          await navigate(tabId!, search(q, cfg.search.days, langsOf(cfg.langs)))
+        }
+      } else if (cfg.search.on) throw new Error('Set your niche (onboarding) to use specialized search.')
+      return sendToPage(tabId!, { type: 'collect', targets, langs: langsOf(cfg.langs) })
+    },
     onMutate: () => { halt.current = false; setRunning(true); setProgress(undefined); setResult(undefined); setNote('Scrolling the page like a human…') },
     onError: (e) => { setRunning(false); setNote(String(e)) },
   })

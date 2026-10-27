@@ -27,7 +27,7 @@ if (adapter && !window.__socialWarm) {
       adapter.readReplies(m.max).then(reply, () => reply({ replies: [] }));
       return true;
     }
-    if (m.type === 'collect') collect(adapter, m.targets);
+    if (m.type === 'collect') collect(adapter, m.targets, m.langs);
     if (m.type === 'stop') stopCollect();
     reply({ ok: true });
   });

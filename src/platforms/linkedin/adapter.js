@@ -3,7 +3,8 @@ import { sleep, rnd, waitFor, click, glide, behave } from '../../shared/human.js
 import { buttonByText, num, typeInto } from '../../shared/dom.js';
 import { ok, skipped, fail } from '../../shared/result.js';
 
-const postEls = () => [...document.querySelectorAll('div[data-urn^="urn:li:activity"], div[data-urn^="urn:li:share"], div[data-urn^="urn:li:ugcPost"]')];
+const FEED = 'div[data-urn^="urn:li:activity"], div[data-urn^="urn:li:share"], div[data-urn^="urn:li:ugcPost"]';
+const postEls = () => [...document.querySelectorAll(FEED)];
 
 function parse(el) {
   const urn = el.getAttribute('data-urn');

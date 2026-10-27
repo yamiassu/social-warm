@@ -3,24 +3,39 @@ import { sleep, rnd, waitFor, click, glide, behave } from '../../shared/human.js
 import { buttonByText, typeInto } from '../../shared/dom.js';
 import { ok, skipped, fail } from '../../shared/result.js';
 
+// labels follow the account's UI language (English / Portuguese)
+const LIKE = /^(like|curtir)$/i, UNLIKE = /^(unlike|descurtir)$/i;
+const svgBy = (root, re) => [...root.querySelectorAll('svg[aria-label]')].find((s) => re.test(s.getAttribute('aria-label')));
+// comments have hearts with the same label, so find the post's own: the like in the smallest container that also holds the Comment icon
+const COMMENT = /^(comment|comentar|comentário)$/i, LIKE_ANY = /^(like|unlike|curtir|descurtir)$/i;
+function postLike(root, re) {
+  for (let e = svgBy(root, COMMENT)?.parentElement; e && e !== root.parentElement; e = e.parentElement) {
+    if (svgBy(e, LIKE_ANY)) return svgBy(e, re);
+  }
+}
 const articles = () => [...document.querySelectorAll('article')];
+// posts have no <header> any more: the author is the first profile-looking link in the article
+const RESERVED = /^(p|reel|reels|explore|direct|accounts|stories|tv)$/;
+const authorLink = (a) => [...a.querySelectorAll('a[href^="/"]')].find((l) => { const m = l.getAttribute('href').match(/^\/([\w.]{1,30})\/$/); return m && !RESERVED.test(m[1]); });
 const POST_LINK = 'a[href*="/p/"], a[href*="/reel/"]';
 
 function parse(a) {
   const link = [...a.querySelectorAll(POST_LINK)].find((l) => l.querySelector('time')) || a.querySelector(POST_LINK);
   if (!link) return null;
   const u = new URL(link.getAttribute('href'), location.origin);
-  const handle = (a.querySelector('header a[href^="/"]')?.getAttribute('href') || '').split('/')[1] || '';
+  const handle = (authorLink(a)?.getAttribute('href') || '').split('/')[1] || '';
   const caption = [...a.querySelectorAll('span[dir="auto"]')].map((s) => s.innerText.trim()).sort((x, y) => y.length - x.length)[0] || '';
   const images = [...a.querySelectorAll('img')].filter((i) => !/profile picture/i.test(i.alt) && i.naturalWidth > 150).map((i) => i.src).slice(0, 4);
-  return { url: u.origin + u.pathname, handle, text: caption, images, likes: 0, replies: 0, liked: !!a.querySelector('svg[aria-label="Unlike"]') };
+  return { url: u.origin + u.pathname, handle, text: caption, images, likes: 0, replies: 0, liked: !!postLike(a, UNLIKE) };
 }
 
 // feed posts show "Follow" next to the username for accounts you don't follow
 async function followState(handle) {
-  const a = articles().find((x) => x.querySelector(`header a[href="/${handle}/"]`));
-  if (!a) return 'unknown';
-  const header = a.querySelector('header');
+  const link = articles().map((x) => [...x.querySelectorAll(`a[href="/${handle}/"]`)][0]).find(Boolean);
+  if (!link) return 'unknown';
+  let header = link.parentElement; // climb until the author row (the one holding Follow/Following)
+  for (let i = 0; i < 6 && header && !buttonByText(/^(following|follow)$/i, header); i++) header = header.parentElement;
+  if (!header || header.tagName === 'ARTICLE') return 'unknown';
   if (buttonByText(/^following$/i, header)) return 'following';
   return buttonByText(/^follow$/i, header) ? 'not-following' : 'unknown';
 }
@@ -50,26 +65,30 @@ async function act({ type, text, dry }) {
     await click(f);
     return (await waitFor(() => buttonByText(/^(following|requested)$/i, document.querySelector('header') || document), 4000)) ? ok() : fail('follow not confirmed');
   }
-  const art = await waitFor(() => articles()[0]);
+  // a post's own page may have no <article>: fall back to <main>, once its like button has rendered
+  const art = await waitFor(() => { const r = articles()[0] || document.querySelector('main'); return r && (postLike(r, LIKE) || postLike(r, UNLIKE)) ? r : null; });
   if (!art) return fail('post not found');
   if (type === 'like') {
-    if (art.querySelector('svg[aria-label="Unlike"]')) return skipped('already liked');
-    const b = art.querySelector('svg[aria-label="Like"]')?.closest('[role="button"], button');
+    if (postLike(art, UNLIKE)) return skipped('already liked');
+    const b = postLike(art, LIKE)?.closest('[role="button"], button');
     if (!b) return fail('like button not found');
     if (dry) return ok('dry run: like button found');
     await click(b);
-    return (await waitFor(() => art.querySelector('svg[aria-label="Unlike"]'), 4000)) ? ok() : fail('like not confirmed');
+    return (await waitFor(() => postLike(art, UNLIKE), 4000)) ? ok() : fail('like not confirmed');
   }
-  const box = await waitFor(() => art.querySelector('textarea[aria-label^="Add a comment"]') || document.querySelector('textarea[aria-label^="Add a comment"]'));
+  const box = await waitFor(() => document.querySelector('textarea[aria-label^="Add a comment"], textarea[aria-label^="Adicione um coment"]'));
   if (!box) return fail('comment box not found');
   if (dry) return ok('dry run: comment box found');
   await click(box);
   await typeInto(box, text);
   await sleep(rnd(800, 1800));
-  const send = await waitFor(() => buttonByText(/^post$/i, box.closest('form') || art), 4000);
-  if (!send) return fail('post button not found');
-  await click(send);
-  return (await waitFor(() => !box.value, 6000)) ? ok() : fail('comment not confirmed');
+  const POST = /^(post|postar|publicar)$/i;
+  const send = await waitFor(() => buttonByText(POST, box.closest('form') || art) || buttonByText(POST, document), 4000);
+  if (send) await click(send);
+  else { // no button found: submit with Enter, which the box also accepts
+    for (const type of ['keydown', 'keyup']) box.dispatchEvent(new KeyboardEvent(type, { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true, cancelable: true }));
+  }
+  return (await waitFor(() => !box.value, 6000)) ? ok() : fail(`comment not confirmed (${send ? 'clicked post' : 'no post button, tried Enter'}; box has ${box.value.length} of ${text.length} chars)`);
 }
 
 export default {

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 // message the page script; inject it first if the tab was open before install/update
@@ -22,20 +22,30 @@ export function navigate(tabId: number, url: string) {
   })
 }
 
+// the panel is bound to one tab (the one it was opened on) so switching tabs never redirects a run;
+// rebind() moves it to whatever tab is active now
 export function useActiveTab() {
   const qc = useQueryClient()
+  const pinned = useRef<number | undefined>(undefined)
   useEffect(() => {
     const refresh = () => qc.invalidateQueries({ queryKey: ['tab'] })
-    const onUpdated = (_: number, c: { url?: string }) => c.url && refresh()
-    chrome.tabs.onActivated.addListener(refresh)
+    const onUpdated = (id: number, c: { url?: string; title?: string }) => (c.url || c.title) && (pinned.current === undefined || id === pinned.current) && refresh()
     chrome.tabs.onUpdated.addListener(onUpdated)
+    chrome.tabs.onRemoved.addListener(refresh)
     return () => {
-      chrome.tabs.onActivated.removeListener(refresh)
       chrome.tabs.onUpdated.removeListener(onUpdated)
+      chrome.tabs.onRemoved.removeListener(refresh)
     }
   }, [qc])
-  return useQuery({
+  const q = useQuery({
     queryKey: ['tab'],
-    queryFn: async () => (await chrome.tabs.query({ active: true, lastFocusedWindow: true }))[0],
+    queryFn: async () => {
+      const bound = pinned.current === undefined ? undefined : await chrome.tabs.get(pinned.current).catch(() => undefined) // closed: fall back to active
+      const tab = bound ?? (await chrome.tabs.query({ active: true, lastFocusedWindow: true }))[0]
+      pinned.current = tab?.id
+      return tab
+    },
   })
+  const rebind = () => { pinned.current = undefined; return qc.invalidateQueries({ queryKey: ['tab'] }) }
+  return { ...q, rebind }
 }
