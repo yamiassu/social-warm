@@ -37,6 +37,36 @@ export function SettingsCards({ form }: { form: SettingsForm }) {
       </section>
 
       <section className="card">
+        <h2>Languages</h2>
+        <p className="hint">Only gather posts in these languages, e.g. <code>en, pt</code> (ISO codes, comma separated). Empty = any. Posts too short to detect are skipped.</p>
+        <form.Field name="langs">
+          {(f) => <input type="text" aria-label="Languages" placeholder="any" value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} />}
+        </form.Field>
+      </section>
+
+      <section className="card">
+        <h2>Specialized search</h2>
+        <p className="hint">Search your niche terms (from onboarding) instead of reading the feed. X, Reddit and YouTube only; other sites read the feed.</p>
+        <div className="row">
+          <span className="lbl">Search instead of feed</span>
+          <form.Field name="search.on">
+            {(f) => (
+              <label className="sw">
+                <input type="checkbox" aria-label="Specialized search" checked={f.state.value} onChange={(e) => f.handleChange(e.target.checked)} />
+                <i />
+              </label>
+            )}
+          </form.Field>
+        </div>
+        <div className="row">
+          <span className="lbl">Posts from the last (days)</span>
+          <form.Field name="search.days">
+            {(f) => <input type="number" min={1} max={365} aria-label="Search recency in days" value={f.state.value} onChange={(e) => f.handleChange(Math.min(365, Math.max(1, Math.round(+e.target.value) || 1)))} />}
+          </form.Field>
+        </div>
+      </section>
+
+      <section className="card">
         <h2>Base prompt</h2>
         <form.Field name="base">
           {(f) => <textarea rows={6} spellCheck={false} value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} />}

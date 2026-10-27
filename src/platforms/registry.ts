@@ -12,6 +12,8 @@ export type Platform = {
   handle: RegExp
   profile: (handle: string) => string
   replyMax: number
+  /** search results for the niche terms, newest first, limited to the last `days`; none = no keyword post search */
+  search?: (query: string, days: number, langs: string[]) => string
   /** what the generic actions mean here */
   vocabulary: { like: string; reply: string; follow: string }
 }
@@ -21,11 +23,13 @@ export const PLATFORMS: Platform[] = [
     id: 'x', label: 'X', site: /^https:\/\/(x|twitter)\.com\//,
     post: /^https:\/\/(?:x|twitter)\.com\/\w{1,15}\/status\/\d+/, handle: /^\w{1,15}$/,
     profile: (h) => `https://x.com/${h}`, replyMax: 280, vocabulary: { like: 'like', reply: 'reply', follow: 'follow' },
+    search: (q, d, l) => `https://x.com/search?f=live&q=${encodeURIComponent(`${q}${l.length ? ` (${l.map((x) => `lang:${x}`).join(' OR ')})` : ''} since:${new Date(Date.now() - d * 864e5).toISOString().slice(0, 10)}`)}`,
   },
   {
     id: 'reddit', label: 'Reddit', site: /^https:\/\/(www\.|old\.)?reddit\.com\//,
     post: /^https:\/\/(?:www\.|old\.)?reddit\.com\/r\/\w+\/comments\/\w+/, handle: /^[\w-]{3,20}$/,
     profile: (h) => `https://www.reddit.com/user/${h}/`, replyMax: 1000, vocabulary: { like: 'upvote', reply: 'comment', follow: 'follow user' },
+    search: (q, d) => `https://www.reddit.com/search/?sort=new&t=${d <= 1 ? 'day' : d <= 7 ? 'week' : d <= 31 ? 'month' : 'year'}&q=${encodeURIComponent(q)}`,
   },
   {
     id: 'linkedin', label: 'LinkedIn', site: /^https:\/\/www\.linkedin\.com\//,
@@ -41,6 +45,7 @@ export const PLATFORMS: Platform[] = [
     id: 'youtube', label: 'YouTube', site: /^https:\/\/(www\.|m\.)?youtube\.com\//,
     post: /^https:\/\/(?:www\.)?youtube\.com\/(?:watch\?v=|shorts\/)[\w-]{11}/, handle: /^[\w.\-·]{3,60}$/,
     profile: (h) => `https://www.youtube.com/@${h}`, replyMax: 500, vocabulary: { like: 'like the video', reply: 'comment on the video', follow: 'subscribe' },
+    search: (q, d) => `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}&sp=${d <= 1 ? 'EgQIAhAB' : d <= 7 ? 'EgQIAxAB' : d <= 31 ? 'EgQIBBAB' : 'EgQIBRAB'}`,
   },
 ]
 

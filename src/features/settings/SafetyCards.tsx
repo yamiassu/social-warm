@@ -4,7 +4,7 @@ import { DEFAULTS } from './settings.model'
 import type { SettingsForm } from './useSettings'
 
 const CAPS: [Kind, string][] = [['like', 'Likes'], ['reply', 'Replies'], ['follow', 'Follows']]
-const PICK = ['base', 'niche', 'banned', 'caps', 'likes', 'comments', 'follows'] as const
+const PICK = ['base', 'niche', 'banned', 'oversample', 'langs', 'search', 'caps', 'likes', 'comments', 'follows'] as const
 
 // daily limits, words replies must avoid, and a settings backup (the AI key is deliberately not exported)
 export function SafetyCards({ form }: { form: SettingsForm }) {
@@ -46,6 +46,14 @@ export function SafetyCards({ form }: { form: SettingsForm }) {
             </form.Field>
           ))}
         </div>
+      </section>
+
+      <section className="card">
+        <h2>Gather multiplier</h2>
+        <p className="hint">Gather this many times the requested amount, so the model can drop off-niche items and the request stays the cap.</p>
+        <form.Field name="oversample">
+          {(f) => <input type="number" min={1} max={20} aria-label="Gather multiplier" value={f.state.value} onChange={(e) => f.handleChange(Math.min(20, Math.max(1, Math.round(+e.target.value) || 1)))} />}
+        </form.Field>
       </section>
 
       <section className="card">

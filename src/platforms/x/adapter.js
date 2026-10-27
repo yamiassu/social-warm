@@ -69,7 +69,8 @@ async function act({ type, text, dry }) {
     await click(f);
     return (await waitFor(() => document.querySelector('[data-testid="placementTracking"] [data-testid$="-unfollow"]'), 4000)) ? ok() : fail('follow not confirmed');
   }
-  const art = await waitFor(() => document.querySelector('article[data-testid="tweet"]'));
+  // on a reply's page the thread's first article is the original post, so pick the one the URL points at
+  const art = await waitFor(() => articles().find((a) => { const u = parse(a)?.url; return u && new URL(u).pathname === location.pathname; }));
   if (!art) return fail('post not found');
   if (type === 'like') {
     if (art.querySelector('[data-testid="unlike"]')) return skipped('already liked');

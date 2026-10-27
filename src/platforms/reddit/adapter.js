@@ -18,6 +18,20 @@ function parse(el) {
   };
 }
 
+// search results aren't shreddit-post: each card has a post-title link (aria-label = title); the card is the
+// nearest ancestor holding only that one title link
+function parseResult(a) {
+  const card = (() => { let e = a; while (e.parentElement && e.parentElement.querySelectorAll('[data-testid="post-title"]').length === 1) e = e.parentElement; return e; })();
+  const href = a.getAttribute('href');
+  if (!href) return null;
+  return {
+    url: new URL(href, location.origin).href.split('?')[0],
+    handle: (card.querySelector('a[href^="/user/"], a[href^="/u/"]')?.getAttribute('href') || '').split('/')[2] || 'unknown',
+    text: (a.getAttribute('aria-label') || a.innerText).trim(),
+    images: [], likes: 0, replies: 0, liked: false,
+  };
+}
+
 async function readReplies(max = 8) {
   await sleep(rnd(1500, 2500));
   const replies = new Map();
@@ -65,8 +79,18 @@ async function act({ type, text, dry }) {
   if (!editor) return fail('comment editor did not open');
   await typeInto(editor, text);
   await sleep(rnd(800, 1800));
-  const send = await waitFor(() => { const b = buttonByText(/^comment$/i, host); return b && !b.disabled ? b : null; }, 4000);
-  if (!send) return fail('comment button not found/disabled');
+  const ready = () => { const b = buttonByText(/^comment$/i, host); return b && !b.disabled && b.getAttribute('aria-disabled') !== 'true' ? b : null; };
+  let send = await waitFor(ready, 3000);
+  if (!send) { // the editor may not have registered the text: nudge it with a real edit, then look again
+    editor.focus();
+    document.execCommand('insertText', false, ' ');
+    document.execCommand('delete');
+    send = await waitFor(ready, 3000);
+  }
+  if (!send) {
+    const b = buttonByText(/^comment$/i, host);
+    return fail(`comment button ${b ? 'disabled' : 'not found'} (editor has ${(editor.innerText || '').trim().length} of ${text.length} chars)`);
+  }
   await click(send);
   return (await waitFor(() => !(deep('[contenteditable="true"]', host)?.innerText || '').trim(), 6000)) ? ok() : fail('comment not confirmed');
 }
@@ -74,7 +98,11 @@ async function act({ type, text, dry }) {
 export default {
   id: 'reddit',
   minReplyText: 20,
-  posts: () => [...document.querySelectorAll('shreddit-post')].map(parse).filter((p) => p && p.handle),
+  dropRepeats: true, // the same title in several subreddits is spam
+  posts: () => [
+    ...[...document.querySelectorAll('shreddit-post')].map(parse).filter((p) => p && p.handle),
+    ...[...document.querySelectorAll('a[data-testid="post-title"]')].map(parseResult).filter(Boolean),
+  ],
   people: () => [],
   followState: async () => 'unknown', // no follow state on the feed
   readReplies, act,
