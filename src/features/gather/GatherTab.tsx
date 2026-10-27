@@ -4,7 +4,7 @@ import { CodeEditor } from '../../shared/ui/CodeEditor'
 import { SUPPORTED_LABELS } from '../../platforms/registry'
 import { navigate, sendToPage } from '../../shared/chrome/tabs'
 import { SettingsCards } from '../settings/SettingsCards'
-import { KEYS, phrases, targetsOf, type Cfg } from '../settings/settings.model'
+import { KEYS, OVERSAMPLE, phrases, targetsOf, type Cfg } from '../settings/settings.model'
 import type { SettingsForm } from '../settings/useSettings'
 import { buildPrompt } from './gather.prompt'
 import type { Progress, Result, Saved } from './gather.model'
@@ -19,14 +19,15 @@ export function GatherTab({ form, cfg, saved, tabId, supported, resultActions }:
   const [progress, setProgress] = useState<Progress>()
   const [result, setResult] = useState<Result | undefined>(saved.result)
   const [prompt, setPrompt] = useState(() =>
-    saved.prompt && saved.prompt.at === saved.result?.at ? saved.prompt.text : saved.result ? buildPrompt(cfg.base, saved.result, phrases(cfg.banned)) : '')
+    saved.prompt && saved.prompt.at === saved.result?.at ? saved.prompt.text : saved.result ? buildPrompt(cfg.base, saved.result, phrases(cfg.banned), cfg.niche, targetsOf(cfg)) : '')
   const [copied, setCopied] = useState(false)
   const [note, setNote] = useState('')
   const halt = useRef(false)
 
   useEffect(() => { if (result) void chrome.storage.local.set({ prompt: { text: prompt, at: result.at } }) }, [prompt, result])
 
-  const targets = targetsOf(cfg)
+  const wanted = targetsOf(cfg)
+  const targets = Object.fromEntries(KEYS.map((k) => [k, wanted[k] * OVERSAMPLE])) as typeof wanted
   const total = Object.values(targets).reduce((a, b) => a + b, 0)
 
   useEffect(() => {
@@ -55,7 +56,7 @@ export function GatherTab({ form, cfg, saved, tabId, supported, resultActions }:
       setRunning(false)
       setNote(halt.current || m.stopped ? 'Stopped early — showing what was found.' : 'Done.')
       setResult(r)
-      setPrompt(buildPrompt(form.state.values.base, r, phrases(form.state.values.banned)))
+      setPrompt(buildPrompt(form.state.values.base, r, phrases(form.state.values.banned), form.state.values.niche, targetsOf(form.state.values)))
     }
     chrome.runtime.onMessage.addListener(onMsg)
     return () => chrome.runtime.onMessage.removeListener(onMsg)
