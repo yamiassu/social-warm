@@ -46,7 +46,7 @@ async function readReplies(max = 8) {
   for (let i = 0; i < 4 && replies.size < max; i++) {
     await waitFor(() => articles().length, 8000);
     const posts = articles().map(parse).filter(Boolean);
-    const main = posts.findIndex((p) => new URL(p.url).pathname === location.pathname);
+    const main = posts.findIndex((p) => p.url.split('/status/')[1] === location.pathname.split('/status/')[1]);
     for (const p of posts.slice(main + 1)) { // everything after the post itself is a reply
       if (p.text && !replies.has(p.url)) replies.set(p.url, { handle: p.handle, text: p.text.slice(0, 200) });
     }
@@ -70,7 +70,9 @@ async function act({ type, text, dry }) {
     return (await waitFor(() => document.querySelector('[data-testid="placementTracking"] [data-testid$="-unfollow"]'), 4000)) ? ok() : fail('follow not confirmed');
   }
   // on a reply's page the thread's first article is the original post, so pick the one the URL points at
-  const art = await waitFor(() => articles().find((a) => { const u = parse(a)?.url; return u && new URL(u).pathname === location.pathname; }));
+  // match on the status id only: handle case or a renamed account would break a full-path match
+  const sid = (u) => u.match(/\/status\/(\d+)/)?.[1];
+  const art = await waitFor(() => articles().find((a) => { const u = parse(a)?.url; return u && sid(u) === sid(location.pathname); }));
   if (!art) return fail('post not found');
   if (type === 'like') {
     if (art.querySelector('[data-testid="unlike"]')) return skipped('already liked');
