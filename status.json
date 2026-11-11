@@ -1,26 +1,26 @@
 {
-  "updated": "2026-11-09T15:47:07.076Z",
-  "run": "https://github.com/yamiassu/social-warm/actions/runs/42647530942",
+  "updated": "2026-11-11T13:55:48.573Z",
+  "run": "https://github.com/yamiassu/social-warm/actions/runs/43033085277",
   "sites": {
     "reddit": {
       "status": "blocked",
-      "when": "2026-11-09T15:43:49.582Z"
+      "when": "2026-11-11T13:52:40.874Z"
     },
     "youtube": {
       "status": "passed",
-      "when": "2026-11-09T15:43:52.201Z"
+      "when": "2026-11-11T13:52:39.501Z"
     },
     "x": {
       "status": "skipped",
-      "when": "2026-11-09T15:43:36Z"
+      "when": "2026-11-11T13:52:33Z"
     },
     "linkedin": {
       "status": "skipped",
-      "when": "2026-11-09T15:43:35Z"
+      "when": "2026-11-11T13:52:33Z"
     },
     "instagram": {
       "status": "skipped",
-      "when": "2026-11-09T15:43:35Z"
+      "when": "2026-11-11T13:52:33Z"
     }
   }
 }
